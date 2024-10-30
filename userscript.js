@@ -5,12 +5,13 @@
 // @description   Download all the booty!
 // @author        HeronErin
 // @license       MIT
-// @orign-license MIT
 // @supportURL    https://github.com/HeronErin/LibbyRip/issues
 // @match         *://*.listen.libbyapp.com/*
 // @icon          https://www.google.com/s2/favicons?sz=64&domain=libbyapp.com
 // @require       https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js
 // @grant         none
+// @downloadURL https://update.greasyfork.org/scripts/498782/LibreGRAB.user.js
+// @updateURL https://update.greasyfork.org/scripts/498782/LibreGRAB.meta.js
 // ==/UserScript==
 
 (()=>{
@@ -36,7 +37,7 @@
         background-color: grey;
 
         overflow-x: hidden;
-        overflow-y: scroll; 
+        overflow-y: scroll;
 
         transition: height 0.3s
     }
@@ -78,19 +79,24 @@
 
         chapterMenuElem.innerHTML = chaptersMenu.replace("{CHAPTERS}", urls.length);
         document.body.appendChild(chapterMenuElem);
-        
+
         downloadElem = document.createElement("div");
         downloadElem.classList.add("foldMenu");
         document.body.appendChild(downloadElem);
 
 
     }
-    function repairSplinePath(s, si){
+    function repairSplinePath(s, si) {
+        if (!s || !s.includes("?cmpt=")) {
+            console.error("Invalid URL structure:", s);
+            return null; // or handle accordingly, e.g., return an empty string or skip processing this entry
+        }
         s = window.origin + "/" + s;
-        const spline = btoa(JSON.stringify({spine: si}));
+        const spline = btoa(JSON.stringify({ spine: si }));
         const ssplit = s.split("?cmpt=");
-        return  ssplit[0] + "?cmpt=" + spline + "--" + ssplit[1].split("--")[1].substring(0, 40);
+        return ssplit[0] + "?cmpt=" + spline + "--" + ssplit[1].split("--")[1].substring(0, 40);
     }
+
     function getUrls(){
         let ret = [];
         for (let spine of BIF.map.spine){
@@ -195,21 +201,21 @@
       // Wait for all files to be fetched and added to the zip
       await Promise.all(fetchPromises);
 
-      
+
       downloadElem.innerHTML += "<br><b>Downloads complete!</b> Now waiting for them to be assembled! (This might take a <b><i>minute</i></b>) <br>";
       downloadElem.innerHTML += "Zip progress: <b id='zipProg'>0</b>%";
 
       downloadElem.scrollTo(0, downloadElem.scrollHeight);
 
       // Generate the zip file
-      const zipBlob = await zip.generateAsync({ 
+      const zipBlob = await zip.generateAsync({
         type: 'blob',
         compression: "STORE",
         streamFiles: true,
       }, (meta)=>{
         if (meta.percent)
             downloadElem.querySelector("#zipProg").textContent = meta.percent.toFixed(2);
-        
+
       });
 
       downloadElem.innerHTML += "Generated zip file! <br>"
@@ -220,7 +226,7 @@
 
       downloadElem.innerHTML += "Generated zip file link! <br>"
       downloadElem.scrollTo(0, downloadElem.scrollHeight);
-      
+
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = BIF.map.title.main + '.zip';
@@ -238,7 +244,7 @@
     function downloadChapters(){
         if (downloadState != -1)
             return;
-        
+
         downloadState = 0;
         downloadElem.classList.add("active");
         downloadElem.innerHTML = "<b>Starting download</b><br>";
@@ -248,7 +254,7 @@
     function exportChapters(){
         if (downloadState != -1)
             return;
-        
+
         downloadState = 0;
         downloadElem.classList.add("active");
         downloadElem.innerHTML = "<b>Starting export</b><br>";
